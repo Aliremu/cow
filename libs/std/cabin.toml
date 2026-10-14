@@ -1,0 +1,9 @@
+[package]
+name = "std"
+version = "0.1.0"
+cxx-standard.workspace = true
+
+[target.std]
+type = "library"
+sources = ["src/cow.cpp"]
+include-dirs = ["src"]

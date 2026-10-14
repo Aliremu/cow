@@ -1,0 +1,57 @@
+[package]
+name = "async"
+version = "0.1.0"
+cxx-standard.workspace = true
+
+[target.async]
+type = "library"
+sources = ["src/async.cpp"]
+include-dirs = ["src"]
+
+[target.thread-lifecycle]
+type = "executable"
+sources = ["examples/01_thread_lifecycle.cpp"]
+
+[target.jthread-stop]
+type = "executable"
+sources = ["examples/02_jthread_stop.cpp"]
+
+[target.mutex-counter]
+type = "executable"
+sources = ["examples/03_mutex_counter.cpp"]
+
+[target.condition-variable]
+type = "executable"
+sources = ["examples/04_condition_variable.cpp"]
+
+[target.atomic-wait]
+type = "executable"
+sources = ["examples/05_atomic_wait.cpp"]
+
+[target.promise-future]
+type = "executable"
+sources = ["examples/06_promise_future.cpp"]
+
+[target.async-task]
+type = "executable"
+sources = ["examples/07_async_task.cpp"]
+
+[target.latch]
+type = "executable"
+sources = ["examples/08_latch.cpp"]
+
+[target.barrier]
+type = "executable"
+sources = ["examples/09_barrier.cpp"]
+
+[target.semaphore]
+type = "executable"
+sources = ["examples/10_semaphore.cpp"]
+
+[target.shared-mutex]
+type = "executable"
+sources = ["examples/11_shared_mutex.cpp"]
+
+[target.coroutine-basics]
+type = "executable"
+sources = ["examples/12_coroutine_basics.cpp"]

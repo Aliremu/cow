@@ -1,0 +1,13 @@
+[package]
+name = "cow"
+version = "0.1.0"
+cxx-standard.workspace = true
+
+[target.cow]
+type = "executable"
+sources = ["src/main.cpp"]
+deps = ["std", "spdlog"]
+
+[dependencies]
+std = { path = "../std" } 
+spdlog = { version = "=1.17.0", port = true }

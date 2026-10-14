@@ -1,0 +1,15 @@
+[workspace]
+members = [
+  "libs/*"
+]
+default-members = [
+  "libs/core"
+]
+cxx-standard = "c++26"
+
+[toolchain]
+cc = "gcc"
+cxx = "g++"
+ar = "ar"
+
+[workspace.dependencies]

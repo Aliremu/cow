@@ -1,0 +1,14 @@
+CompileFlags:
+  CompilationDatabase: build/dev   # wherever cabin writes compile_commands.json
+  Remove: [-freflection]           # only needed if you pass it; clangd doesn't know it
+  Add:
+    - -isystem
+    - /home/aliremu/code/cow/sysroot/c++/17.0.0
+    - -isystem
+    - /home/aliremu/code/cow/sysroot/c++/17.0.0/x86_64-pc-linux-gnu
+    - -isystem
+    - /home/aliremu/code/cow/sysroot/c++/17.0.0/backward
+    - -isystem
+    - /home/aliremu/code/cow/sysroot/include
+    - -isystem
+    - /home/aliremu/code/cow/sysroot/include/x86_64-linux-gnu
