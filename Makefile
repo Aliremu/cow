@@ -22,6 +22,9 @@ build:
 run:
 	$(DOCKER_RUN) cabin run --cache-dir "$(CABIN_CACHE_DIR)" -- $(ARGS)
 
+fmt:
+	$(DOCKER_RUN) cabin fmt --workspace -- $(ARGS)
+
 test:
 	$(DOCKER_RUN) cabin test --cache-dir "$(CABIN_CACHE_DIR)"
 
