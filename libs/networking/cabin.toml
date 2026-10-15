@@ -1,0 +1,14 @@
+[package]
+name = "networking"
+version = "0.1.0"
+cxx-standard.workspace = true
+
+[target.server]
+type = "executable"
+sources = ["src/server.cpp"]
+include-dirs = ["src"]
+
+[target.client]
+type = "executable"
+sources = ["src/client.cpp"]
+include-dirs = ["src"]

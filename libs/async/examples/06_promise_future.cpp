@@ -1,5 +1,5 @@
 #include <future>
-#include <iostream>
+#include <print>
 #include <thread>
 
 // Lesson: promise/future represents one result that will be supplied later.
@@ -13,8 +13,9 @@ auto main() -> int
 
     // Goal: deliver 42 from a worker to this thread.
     // TODO: Move promise into a std::jthread callable.
+    auto thread = std::jthread{[&] { promise.set_value(42); }};
     // TODO: Call set_value(42) in the worker.
     // TODO: Call future.get() and print the returned value.
-    //
+    std::println("Future: {}", future.get());
     // Stretch: use set_exception() and handle the exception from get().
 }

@@ -3,8 +3,13 @@
 IMAGE ?= chuds-dev
 TTY   := $(shell [ -t 0 ] && echo -t)
 CABIN_CACHE_DIR ?= $(PWD)/.cabin-cache
+HOST_PORT ?= 8080
+PACKAGE ?=
+BIN ?=
+RUN_TARGET = $(if $(PACKAGE),--package "$(PACKAGE)") $(if $(BIN),--bin "$(BIN)")
 DOCKER_RUN = docker run --rm -i $(TTY) \
     -v "$(PWD)":"$(PWD)" -w "$(PWD)" \
+    -p $(HOST_PORT):8080 \
     -e CCACHE_DIR=/ccache -e CCACHE_MAXSIZE=50G -v dev-ccache:/ccache \
     $(IMAGE)
 
@@ -20,7 +25,7 @@ build:
 	$(DOCKER_RUN) cabin build --cache-dir "$(CABIN_CACHE_DIR)"
 
 run:
-	$(DOCKER_RUN) cabin run --cache-dir "$(CABIN_CACHE_DIR)" -- $(ARGS)
+	$(DOCKER_RUN) cabin run --cache-dir "$(CABIN_CACHE_DIR)" $(RUN_TARGET) -- $(ARGS)
 
 fmt:
 	$(DOCKER_RUN) cabin fmt --workspace -- $(ARGS)
