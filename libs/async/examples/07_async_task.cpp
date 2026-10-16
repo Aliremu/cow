@@ -1,6 +1,6 @@
 #include <chrono>
 #include <future>
-#include <iostream>
+#include <print>
 #include <thread>
 
 using namespace std::chrono_literals;
@@ -14,8 +14,16 @@ auto main() -> int
 {
     // Goal: start a task immediately and collect its result.
     // TODO: Call std::async with std::launch::async.
+    auto task = std::async(
+        std::launch::async,
+        []
+        {
+            std::this_thread::sleep_for(20ms);
+            return 42;
+        });
     // TODO: Make the callable sleep for 20ms and return 42.
     // TODO: Print task.get().
+    std::println("Result: {}", task.get());
     //
     // Question: what can happen if std::launch::async is omitted?
 }

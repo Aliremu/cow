@@ -3,6 +3,12 @@ name = "networking"
 version = "0.1.0"
 cxx-standard.workspace = true
 
+[target.main]
+type = "executable"
+sources = ["src/main.cpp"]
+include-dirs = ["src"]
+deps = ["spdlog"]
+
 [target.server]
 type = "executable"
 sources = ["src/server.cpp"]
@@ -12,3 +18,6 @@ include-dirs = ["src"]
 type = "executable"
 sources = ["src/client.cpp"]
 include-dirs = ["src"]
+
+[dependencies]
+spdlog = { version = "=1.17.0", port = true }

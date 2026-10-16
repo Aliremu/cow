@@ -1,0 +1,48 @@
+#include <contracts>
+#include <expected>
+#include <iterator>
+#include <print>
+#include <ranges>
+
+namespace
+{
+
+}
+
+auto handle_contract_violation(const std::contracts::contract_violation& violation) -> void
+{
+    spdlog::info("Hello!")
+}
+
+class Server
+{
+    struct ServerBindError
+    {
+    };
+
+  public:
+    [[nodiscard]] static auto bind(std::string_view addr) -> std::expected<Server, ServerBindError>
+    {
+        auto parts = addr | std::views::split(':');
+        const auto count = std::ranges::distance(parts);
+        contract_assert(count == 2);
+
+        return Server{};
+    }
+
+    auto route(std::string_view path) -> void
+    {
+    }
+
+  private:
+};
+
+struct Index
+{
+};
+
+auto main() -> int
+{
+    auto server = Server::bind("0.0.0.0:8080");
+    // server.route("/", Index{});
+}

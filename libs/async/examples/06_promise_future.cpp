@@ -13,7 +13,7 @@ auto main() -> int
 
     // Goal: deliver 42 from a worker to this thread.
     // TODO: Move promise into a std::jthread callable.
-    auto thread = std::jthread{[&] { promise.set_value(42); }};
+    auto thread = std::jthread{[promise = std::move(promise)] mutable { promise.set_value(42); }};
     // TODO: Call set_value(42) in the worker.
     // TODO: Call future.get() and print the returned value.
     std::println("Future: {}", future.get());

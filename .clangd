@@ -2,13 +2,15 @@ CompileFlags:
   CompilationDatabase: build/dev   # wherever cabin writes compile_commands.json
   Remove: [-freflection]           # only needed if you pass it; clangd doesn't know it
   Add:
+    # Clangd 18 does not parse GCC's experimental C++26 contracts.
+    - "-Dcontract_assert(...)=((void)0)"
     - -isystem
-    - /home/aliremu/code/cow/sysroot/c++/17.0.0
+    - ../sysroot/c++/17.0.0
     - -isystem
-    - /home/aliremu/code/cow/sysroot/c++/17.0.0/x86_64-pc-linux-gnu
+    - ../sysroot/c++/17.0.0/x86_64-pc-linux-gnu
     - -isystem
-    - /home/aliremu/code/cow/sysroot/c++/17.0.0/backward
+    - ../sysroot/c++/17.0.0/backward
     - -isystem
-    - /home/aliremu/code/cow/sysroot/include
+    - ../sysroot/include
     - -isystem
-    - /home/aliremu/code/cow/sysroot/include/x86_64-linux-gnu
+    - ../sysroot/include/x86_64-linux-gnu

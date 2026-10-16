@@ -1,6 +1,5 @@
 #include <atomic>
 #include <chrono>
-#include <iostream>
 #include <print>
 #include <stop_token>
 #include <thread>
