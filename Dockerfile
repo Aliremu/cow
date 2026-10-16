@@ -1,9 +1,10 @@
 # syntax=docker/dockerfile:1
 
-ARG REGISTRY=192.168.1.246:5000
+ARG REGISTRY=docker.xirei.moe
 ARG REPOSITORY=toolchains/gcc
-ARG GCC_TAG=linux-native-nightly   # better: pin a commit tag
+ARG GCC_TAG=linux-arm64-native-nightly   # better: pin a commit tag
 ARG CABIN_VERSION=0.17.0
+ARG arch=arm64
 
 # Stage 1: prebuilt native GCC trunk from the local registry
 FROM ${REGISTRY}/${REPOSITORY}:${GCC_TAG} AS gcc
@@ -31,7 +32,10 @@ ENV PATH=/opt/gcc-trunk/bin:${PATH} \
     LD_LIBRARY_PATH=/opt/gcc-trunk/lib64 \
     CC=/opt/gcc-trunk/bin/gcc \
     CXX=/opt/gcc-trunk/bin/g++ \
-    CCACHE_DIR=/ccache
+    CCACHE_DIR=/ccache \
+    C_INCLUDE_PATH=/usr/include/aarch64-linux-gnu \
+    CPLUS_INCLUDE_PATH=/usr/include/aarch64-linux-gnu \
+    LIBRARY_PATH=/usr/lib/aarch64-linux-gnu
 
 # Smoke test: fail the build if the toolchain can't compile, link and run iostream
 RUN printf '#include <iostream>\nint main(){std::cout<<"ok\\n";}\n' > /tmp/t.cc \

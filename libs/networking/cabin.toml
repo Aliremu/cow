@@ -3,11 +3,17 @@ name = "networking"
 version = "0.1.0"
 cxx-standard.workspace = true
 
+[target.tcp]
+type = "library"
+sources = ["src/tcp.cpp"]
+include-dirs = ["src"]
+
 [target.main]
 type = "executable"
 sources = ["src/main.cpp"]
 include-dirs = ["src"]
-deps = ["spdlog"]
+defines = ["SPDLOG_USE_STD_FORMAT"]
+deps = ["tcp", "spdlog"]
 
 [target.server]
 type = "executable"

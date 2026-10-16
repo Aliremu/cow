@@ -63,7 +63,7 @@ auto main() -> int
     std::println("Received {} bytes", received);
     constexpr auto response = "HTTP/1.1 200 OK\r\n"
                               "Content-Type: text/plain; charset=utf-8\r\n"
-                              "Content-Length: 20\r\n"
+                              "Content-Length: 22\r\n"
                               "Connection: close\r\n"
                               "\r\n"
                               "Hello from networking\n";
