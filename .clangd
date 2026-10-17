@@ -6,13 +6,18 @@ CompileFlags:
     - -Xclang
     # Clangd 18 does not parse GCC's experimental C++26 contracts.
     - "-Dcontract_assert(...)=((void)0)"
+    # The sysroot is copied out of the (aarch64) Docker image. Target Linux and
+    # ignore the host macOS SDK / libc++ so only the GCC sysroot headers are used.
+    - --target=aarch64-linux-gnu
+    - -nostdinc++
+    # Paths are resolved relative to the compile command's directory (build/).
     - -isystem
     - ../sysroot/c++/17.0.0
     - -isystem
-    - ../sysroot/c++/17.0.0/x86_64-pc-linux-gnu
+    - ../sysroot/c++/17.0.0/aarch64-linux-gnu
     - -isystem
     - ../sysroot/c++/17.0.0/backward
     - -isystem
     - ../sysroot/include
     - -isystem
-    - ../sysroot/include/x86_64-linux-gnu
+    - ../sysroot/include/aarch64-linux-gnu
