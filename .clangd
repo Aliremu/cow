@@ -2,6 +2,8 @@ CompileFlags:
   CompilationDatabase: build/dev   # wherever cabin writes compile_commands.json
   Remove: [-freflection]           # only needed if you pass it; clangd doesn't know it
   Add:
+    - -std=c++26
+    - -Xclang
     # Clangd 18 does not parse GCC's experimental C++26 contracts.
     - "-Dcontract_assert(...)=((void)0)"
     - -isystem

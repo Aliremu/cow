@@ -1,48 +1,72 @@
 #include <expected>
 #include <functional>
+#include <memory>
+#include <meta>
 #include <spdlog/spdlog.h>
+#include <string>
 #include <sys/socket.h>
 #include <type_traits>
+#include <utility>
 #include <variant>
 
+#include "router.h"
 #include "tcp.h"
-
-template <class... Ts>
-struct overload : Ts...
-{
-    using Ts::operator()...;
-};
-
-namespace wow
-{
-template <typename... Ts>
-auto visit(std::function_ref<std::variant<Ts...>> fn, const std::variant<Ts...>& value) -> void
-{
-    std::visit(fn, value);
-}
-
-template <typename Fn, typename Result, typename Err>
-    requires requires(Fn&& fn, const Result& result, const Err& err) {
-        fn(result);
-        fn(err);
-    }
-auto visit(Fn&& fn, const std::expected<Result, Err>& value) -> void
-{
-    if (value)
-    {
-        std::forward<Fn>(fn)(value.value());
-    }
-    else
-    {
-        std::forward<Fn>(fn)(value.error());
-    }
-}
-}
 
 auto handle_contract_violation(const std::contracts::contract_violation& violation) -> void
 {
     spdlog::info("Hello World");
 }
+
+struct Message
+{
+    uint64_t Id;
+    std::string Text;
+};
+
+struct AppState
+{
+    std::vector<Message> Messages;
+};
+
+template <typename T>
+std::string to_json(T const& obj)
+{
+    std::string out = "{";
+    bool first = true;
+    constexpr auto ctx = std::meta::access_context::unchecked();
+    template for (constexpr auto member : std::define_static_array(std::meta::nonstatic_data_members_of(^^T, ctx)))
+    {
+        if (!first)
+            out += ',';
+        first = false;
+        out += std::format("{}:{}", std::meta::identifier_of(member), obj.[:member:]);
+    }
+    out += '}';
+    return out;
+}
+
+struct index_controller
+{
+    auto get_name() -> std::string
+    {
+        return "Hello World!";
+    }
+
+    auto list_messages() -> wow::get_mapping<"/list">
+    {
+        auto name = get_name();
+        return {200};
+    }
+
+    auto create_message(int id) -> wow::post_mapping<"/list">
+    {
+        return {200};
+    }
+};
+
+struct message_controller
+{
+};
 
 auto main() -> int
 {
@@ -54,34 +78,9 @@ auto main() -> int
     }
 
     spdlog::info("Listening on 0.0.0.0:8080");
-    for (const auto& client : server->incoming())
-    {
-        wow::visit(
-            overload{
-                [](const wow::TcpStream& client)
-                {
-                    spdlog::info("Received connection from {}", client.Addr);
-                    std::array<char, 1024> buffer{};
-                    const auto received = ::recv(client.Socket, buffer.data(), buffer.size(), 0);
-                    if (received == -1)
-                    {
-                        ::close(client.Socket);
-                    }
+    auto app = wow::Router{};
+    spdlog::info("{}", to_json(Message{.Id = 1723, .Text = "Hello, World!"}));
+    app.route<index_controller>("/").route<message_controller>("/messages");
 
-                    spdlog::info("Received {} bytes", received);
-                    constexpr auto response = "HTTP/1.1 200 OK\r\n"
-                                              "Content-Type: text/plain; charset=utf-8\r\n"
-                                              "Content-Length: 22\r\n"
-                                              "Connection: close\r\n"
-                                              "\r\n"
-                                              "Hello from networking\n";
-                    if (::send(client.Socket, response, std::strlen(response), 0) == -1)
-                    {
-                        ::close(client.Socket);
-                    }
-                },
-                [](const std::string& error) { spdlog::error("Client error: ", error); }},
-            client);
-    }
-    // server.route("/", Index{});
+    wow::serve(*server, app);
 }
