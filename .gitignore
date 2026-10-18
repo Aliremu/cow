@@ -2,3 +2,4 @@
 /dist/
 .cabin-cache/
 /sysroot/
+.clangd

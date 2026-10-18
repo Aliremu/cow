@@ -1,3 +1,5 @@
+#include <array>
+#include <atomic>
 #include <expected>
 #include <functional>
 #include <memory>
@@ -8,6 +10,7 @@
 #include <type_traits>
 #include <utility>
 #include <variant>
+#include <vector>
 
 #include "router.h"
 #include "tcp.h"
@@ -28,44 +31,66 @@ struct AppState
     std::vector<Message> Messages;
 };
 
-template <typename T>
-std::string to_json(T const& obj)
+namespace index_controller
 {
-    std::string out = "{";
-    bool first = true;
-    constexpr auto ctx = std::meta::access_context::unchecked();
-    template for (constexpr auto member : std::define_static_array(std::meta::nonstatic_data_members_of(^^T, ctx)))
+    [[= wow::Mapping{""}]] auto index() -> wow::Response
     {
-        if (!first)
-            out += ',';
-        first = false;
-        out += std::format("{}:{}", std::meta::identifier_of(member), obj.[:member:]);
+        return wow::ok(10);
     }
-    out += '}';
-    return out;
 }
 
-struct index_controller
+// struct message_controller
+// {
+//     auto get_name() -> std::string
+//     {
+//         return "Hello World!";
+//     }
+//
+//     [[= wow::Mapping{""}]] auto list_messages() -> wow::Response
+//     {
+//         auto name = get_name();
+//         return {200};
+//     }
+//
+//     [[= wow::Mapping{""}]] auto create_message() -> wow::Response
+//     {
+//         return {200};
+//     }
+//
+//     [[= wow::Mapping{"/{id}"}]] auto get_message([[= wow::Mapping{"id"}]] int id) -> wow::Response
+//     {
+//         return wow::ok(5);
+//     }
+// };
+
+template <typename T>
+struct AtomicMirror
 {
-    auto get_name() -> std::string
-    {
-        return "Hello World!";
-    }
+    struct type;
 
-    auto list_messages() -> wow::get_mapping<"/list">
+    consteval
     {
-        auto name = get_name();
-        return {200};
-    }
+        using namespace std::meta;
+        std::vector<info> atomic_members;
+        const auto context = access_context::unchecked();
 
-    auto create_message(int id) -> wow::post_mapping<"/list">
-    {
-        return {200};
-    }
-};
+        for (const info member : nonstatic_data_members_of(^^T, context))
+        {
+            const info original_type = type_of(member);
+            info mirrored_type = original_type;
 
-struct message_controller
-{
+            // std::atomic<T> requires T to be trivially copyable. Preserve
+            // fields such as std::string instead of forming an invalid type.
+            if (is_trivially_copyable_type(original_type))
+                mirrored_type = substitute(^^std::atomic, std::array{original_type});
+
+            atomic_members.push_back(data_member_spec(
+                mirrored_type,
+                {.name = identifier_of(member)}));
+        }
+
+        define_aggregate(^^type, atomic_members);
+    }
 };
 
 auto main() -> int
@@ -79,8 +104,13 @@ auto main() -> int
 
     spdlog::info("Listening on 0.0.0.0:8080");
     auto app = wow::Router{};
-    spdlog::info("{}", to_json(Message{.Id = 1723, .Text = "Hello, World!"}));
-    app.route<index_controller>("/").route<message_controller>("/messages");
+    spdlog::info("{}", wow::to_json(Message{.Id = 1723, .Text = "Hello, World!"}));
+    app.route<^^index_controller>("/"); //.route<message_controller>("/messages");
+
+    using ConcurrentConfig = AtomicMirror<Message>::type;
+    auto c = ConcurrentConfig{};
+    c.Id.store(10);
+    spdlog::info("Id: {}", c.Id.load());
 
     wow::serve(*server, app);
 }

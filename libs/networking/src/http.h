@@ -1,6 +1,7 @@
 #pragma once
 
 #include <format>
+#include <meta>
 #include <optional>
 #include <print>
 #include <ranges>
@@ -129,6 +130,35 @@ struct Request
         return std::make_optional<Request>(method, target, version, headers, body);
     }
 };
+
+struct Response
+{
+    int Code;
+    std::string Body;
+};
+
+template <typename T>
+inline auto to_json(const T& obj) -> std::string
+{
+    std::string out = "{";
+    bool first = true;
+    constexpr auto ctx = std::meta::access_context::unchecked();
+    template for (constexpr auto member : std::define_static_array(std::meta::nonstatic_data_members_of(^^T, ctx)))
+    {
+        if (!first)
+            out += ',';
+        first = false;
+        out += std::format("{}:{}", std::meta::identifier_of(member), obj.[:member:]);
+    }
+    out += '}';
+    return out;
+}
+
+template <typename T>
+inline auto ok(const T& resp) -> Response
+{
+    return {200, std::to_string(resp)};
+}
 }
 
 template <>

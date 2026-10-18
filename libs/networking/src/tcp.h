@@ -289,18 +289,18 @@ inline auto serve(TcpListener& listener, Router& router) -> void
                     auto read = client.read(buffer);
 
                     auto request = Request::from_raw(std::string_view{buffer});
-                    // if (request)
-                    // {
-                    //     std::println(
-                    //         "{} {} {}\n{}\n\n{}",
-                    //         request->Method,
-                    //         request->Target,
-                    //         request->Version,
-                    //         request->Headers |
-                    //             std::views::transform([](const auto& a) { return std::format("{}", a); }) |
-                    //             std::views::join_with('\n') | std::ranges::to<std::string>(),
-                    //         request->Body);
-                    // }
+                    if (request)
+                    {
+                        std::println(
+                            "{} {} {}\n{}\n\n{}",
+                            request->Method,
+                            request->Target,
+                            request->Version,
+                            request->Headers |
+                                std::views::transform([](const auto& a) { return std::format("{}", a); }) |
+                                std::views::join_with('\n') | std::ranges::to<std::string>(),
+                            request->Body);
+                    }
                     // wow::visit(
                     //     overload{
                     //         [&](std::size_t len) { std::println("Received {} bytes: {}", len, buffer); },
