@@ -10,6 +10,7 @@ cxxflags = ["-freflection"]
 type = "library"
 sources = [
   "src/tcp.cpp",
+  "src/http.cpp",
   "src/router.cpp"
 ]
 include-dirs = ["src"]

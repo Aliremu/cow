@@ -2,9 +2,8 @@
 
 ARG REGISTRY=docker.xirei.moe
 ARG REPOSITORY=toolchains/gcc
-ARG GCC_TAG=linux-arm64-native-nightly   # better: pin a commit tag
+ARG GCC_TAG=linux-${BUILDARCH}-native-nightly   # better: pin a commit tag
 ARG CABIN_VERSION=0.17.0
-ARG arch=arm64
 
 # Stage 1: prebuilt native GCC trunk from the local registry
 FROM ${REGISTRY}/${REPOSITORY}:${GCC_TAG} AS gcc

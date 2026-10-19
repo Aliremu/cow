@@ -1,5 +1,6 @@
 #pragma once
 
+#include <concepts>
 #include <format>
 #include <meta>
 #include <optional>
@@ -8,6 +9,9 @@
 #include <string_view>
 #include <tuple>
 #include <vector>
+#include <fstream>
+
+#include "common.h"
 
 namespace wow
 {
@@ -46,25 +50,7 @@ inline auto parse_request_line(const auto& line) -> std::optional<RequestLine>
     return std::make_optional<RequestLine>(method, target, version);
 }
 
-inline auto trim(std::string_view sv) -> std::string_view
-{
-    const auto whitespace = " \t\n\r\f\v";
-
-    // Find first non-whitespace character and shift start forward
-    const auto start = sv.find_first_not_of(whitespace);
-    if (start == std::string_view::npos)
-    {
-        sv = {}; // String is entirely whitespace
-        return sv;
-    }
-    sv.remove_prefix(start);
-
-    // Find last non-whitespace character and shrink size backward
-    const auto end = sv.find_last_not_of(whitespace);
-    sv.remove_suffix(sv.size() - (end + 1));
-
-    return sv;
-}
+auto trim(std::string_view sv) -> std::string_view;
 
 inline auto parse_headers(auto it, auto end) -> std::vector<Header>
 {
@@ -101,43 +87,24 @@ struct Request
     std::vector<Header> Headers;
     std::string_view Body;
 
-    [[nodiscard]] static auto from_raw(std::string_view raw) -> std::optional<Request>
-    {
-        using namespace std::string_view_literals;
-        constexpr auto header_body_separator = "\r\n\r\n"sv;
-
-        const auto separator = raw.find(header_body_separator);
-        if (separator == std::string_view::npos)
-            return std::nullopt;
-
-        const auto head = raw.substr(0, separator);
-        const auto body = raw.substr(separator + header_body_separator.size());
-
-        auto lines = head | std::views::split("\r\n"sv);
-        auto it = lines.begin();
-        if (it == lines.end())
-            return std::nullopt;
-
-        const auto request_line = detail::parse_request_line(*it);
-        if (!request_line)
-            return std::nullopt;
-
-        const auto [method, target, version] = *request_line;
-        ++it;
-
-        const auto headers = detail::parse_headers(it, lines.end());
-
-        return std::make_optional<Request>(method, target, version, headers, body);
-    }
+    [[nodiscard]] static auto from_raw(std::string_view raw) -> std::optional<Request>;
 };
 
 struct Response
 {
-    int Code;
+    int Status;
+    std::vector<Header> Headers;
     std::string Body;
+
+    auto build_response() const -> std::string;
 };
 
 template <typename T>
+inline constexpr bool is_string_like =
+    std::constructible_from<std::string, std::remove_cvref_t<T>> || std::constructible_from<std::string_view, std::remove_cvref_t<T>>;
+
+template <typename T>
+    requires(!is_string_like<T>)
 inline auto to_json(const T& obj) -> std::string
 {
     std::string out = "{";
@@ -155,9 +122,61 @@ inline auto to_json(const T& obj) -> std::string
 }
 
 template <typename T>
+inline auto serialize(T&& value) -> std::string
+{
+    using Type = std::remove_cvref_t<T>;
+
+    if constexpr (requires { to_json(value); })
+    {
+        return to_json(value);
+    }
+    else if constexpr (std::constructible_from<std::string, T>)
+    {
+        return std::string{std::forward<T>(value)};
+    }
+    else if constexpr (std::constructible_from<std::string_view, T>)
+    {
+        return std::string{std::string_view{std::forward<T>(value)}};
+    }
+    else
+    {
+        static_assert(false, "Type cannot be serialized");
+    }
+}
+
+template <typename T>
 inline auto ok(const T& resp) -> Response
 {
-    return {200, std::to_string(resp)};
+    return {200, {}, serialize(resp)};
+}
+
+template <typename T>
+inline auto error(int code, const T& resp) -> Response
+{
+    return {code, {}, serialize(resp)};
+}
+
+template <FixedString Path>
+auto view() -> Response
+{
+    static const auto body = [] {
+        auto file = std::ifstream{
+            std::string{std::string_view{Path}},
+            std::ios::binary
+        };
+
+        if (!file)
+            throw std::runtime_error{
+                "Failed to open file: " + std::string{std::string_view{Path}}
+            };
+
+        return std::string{
+            std::istreambuf_iterator<char>{file},
+            std::istreambuf_iterator<char>{}
+        };
+    }();
+
+    return ok(body);
 }
 }
 
@@ -168,4 +187,5 @@ struct std::formatter<wow::Header> : std::formatter<std::string_view>
     {
         return std::formatter<std::string_view>::format(std::format("{}: {}", h.Key, h.Value), ctx);
     }
+
 };

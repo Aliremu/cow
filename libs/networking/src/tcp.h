@@ -36,62 +36,15 @@ struct SocketAddr
 class TcpStream
 {
   public:
-    [[nodiscard]] static auto from_listener(int socket, SocketAddr addr) -> TcpStream
-    {
-        return {
-            socket,
-            addr,
-            new std::atomic<std::size_t>(1),
-        };
-    }
+    [[nodiscard]] static auto from_listener(int socket, SocketAddr addr) -> TcpStream;
 
-    TcpStream(const TcpStream& other)
-        : m_Socket{other.m_Socket}
-        , m_Addr{other.m_Addr}
-        , m_Count{other.m_Count}
-    {
-        m_Count->fetch_add(1, std::memory_order::relaxed);
-    }
-    TcpStream& operator=(const TcpStream& other)
-    {
-        m_Socket = other.m_Socket;
-        m_Addr = other.m_Addr;
-        m_Count = other.m_Count;
-        m_Count->fetch_add(1, std::memory_order::relaxed);
+    TcpStream(const TcpStream& other);
+    TcpStream& operator=(const TcpStream& other);
+    TcpStream(TcpStream&& other) noexcept;
+    TcpStream& operator=(TcpStream&& other) noexcept;
+    ~TcpStream();
 
-        return *this;
-    }
-
-    TcpStream(TcpStream&& other) noexcept
-        : m_Socket{std::exchange(other.m_Socket, -1)}
-        , m_Addr{other.m_Addr}
-        , m_Count{std::exchange(other.m_Count, nullptr)}
-    {
-    }
-
-    TcpStream& operator=(TcpStream&& other) noexcept
-    {
-        m_Socket = std::exchange(other.m_Socket, -1);
-        m_Addr = other.m_Addr;
-        m_Count = std::exchange(other.m_Count, nullptr);
-
-        return *this;
-    }
-
-    ~TcpStream()
-    {
-        if (m_Count && m_Count->fetch_sub(1, std::memory_order::acq_rel) == 1)
-        {
-            ::close(m_Socket);
-            delete m_Count;
-        }
-        m_Count = nullptr;
-    }
-
-    [[nodiscard]] auto peer_addr() const -> const SocketAddr&
-    {
-        return m_Addr;
-    }
+    [[nodiscard]] auto peer_addr() const -> const SocketAddr&;
 
     template <typename T>
         requires requires(T& buffer) {
@@ -117,7 +70,7 @@ class TcpStream
             buffer.data();
             requires std::is_pointer_v<decltype(buffer.data())>;
         }
-    [[nodiscard]] auto write(T& buffer) const -> std::expected<std::size_t, std::string>
+    [[nodiscard]] auto write(const T& buffer) const -> std::expected<std::size_t, std::string>
     {
         const auto written = ::send(m_Socket, static_cast<const void*>(buffer.data()), buffer.size(), 0);
         if (written == -1)
@@ -134,12 +87,7 @@ class TcpStream
     SocketAddr m_Addr;
     std::atomic<std::size_t>* m_Count;
 
-    TcpStream(int socket, SocketAddr addr, std::atomic<std::size_t>* count)
-        : m_Socket{socket}
-        , m_Addr{addr}
-        , m_Count{count}
-    {
-    }
+    TcpStream(int socket, SocketAddr addr, std::atomic<std::size_t>* count);
 };
 
 class TcpListener
@@ -155,78 +103,24 @@ class TcpListener
             using pointer = TcpStream*;
             using reference = TcpStream&;
 
-            iterator(TcpListener& listener)
-                : m_Listener{listener}
-            {
-            }
+            iterator(TcpListener& listener);
 
-            auto operator*() -> value_type
-            {
-                auto ret = std::move(*m_Stream);
-                m_Stream.reset();
-                return ret;
-            }
-            auto operator->() -> value_type
-            {
-                auto ret = std::move(*m_Stream);
-                m_Stream.reset();
-                return ret;
-            }
+            auto operator*() -> value_type;
+            auto operator->() -> value_type;
+            auto operator++() noexcept -> iterator&;
+            auto operator++(int) noexcept -> iterator;
 
-            auto operator++() noexcept -> iterator&
-            {
-                return *this;
-            }
-
-            auto operator++(int) noexcept -> iterator
-            {
-                iterator tmp = *this;
-                ++(*this);
-                return tmp;
-            }
-
-            [[nodiscard]] friend auto operator==(const iterator& a, const iterator& b) noexcept -> bool
-            {
-                auto addr = sockaddr_in{};
-                auto len = socklen_t{sizeof(addr)};
-                const auto client = ::accept(a.m_Listener.m_Socket, reinterpret_cast<sockaddr*>(&addr), &len);
-
-                if (client == -1)
-                {
-                    a.m_Stream.emplace(std::unexpected{"Failed to accept client!"});
-                    return false;
-                }
-
-                a.m_Stream.emplace(
-                    std::in_place,
-                    TcpStream::from_listener(
-                        client,
-                        SocketAddr{
-                            .Host = ::ntohl(addr.sin_addr.s_addr),
-                            .Port = ::ntohs(addr.sin_port),
-                        }));
-                return false;
-            }
+            [[nodiscard]] auto operator==(const iterator& other) const noexcept -> bool;
 
           private:
             TcpListener& m_Listener;
             mutable std::optional<std::expected<TcpStream, std::string>> m_Stream{std::nullopt};
         };
 
-        IncomingStream(TcpListener& listener)
-            : m_Listener{listener}
-        {
-        }
+        IncomingStream(TcpListener& listener);
 
-        [[nodiscard]] auto begin() -> iterator
-        {
-            return iterator{m_Listener};
-        }
-
-        [[nodiscard]] auto end() -> iterator
-        {
-            return iterator{m_Listener};
-        }
+        [[nodiscard]] auto begin() -> iterator;
+        [[nodiscard]] auto end() -> iterator;
 
       private:
         TcpListener& m_Listener;
@@ -276,56 +170,7 @@ inline auto visit(Fn&& fn, const std::expected<Result, Err>& value) -> void
     }
 }
 
-inline auto serve(TcpListener& listener, Router& router) -> void
-{
-    for (const auto& client : listener.incoming())
-    {
-        wow::visit(
-            overload{
-                [](const wow::TcpStream& client)
-                {
-                    // spdlog::info("Received connection from {}", client.peer_addr());
-                    std::array<char, 1024> buffer{};
-                    auto read = client.read(buffer);
-
-                    auto request = Request::from_raw(std::string_view{buffer});
-                    if (request)
-                    {
-                        std::println(
-                            "{} {} {}\n{}\n\n{}",
-                            request->Method,
-                            request->Target,
-                            request->Version,
-                            request->Headers |
-                                std::views::transform([](const auto& a) { return std::format("{}", a); }) |
-                                std::views::join_with('\n') | std::ranges::to<std::string>(),
-                            request->Body);
-                    }
-                    // wow::visit(
-                    //     overload{
-                    //         [&](std::size_t len) { std::println("Received {} bytes: {}", len, buffer); },
-                    //         [](const std::string& error) { std::println("{}", error); },
-                    //     },
-                    //     read);
-
-                    const auto response = std::string{"HTTP/1.1 200 OK\r\n"
-                                                      "Content-Type: text/plain; charset=utf-8\r\n"
-                                                      "Content-Length: 22\r\n"
-                                                      "Connection: close\r\n"
-                                                      "\r\n"
-                                                      "Hello from networking\n"};
-                    // spdlog::info("Response: {}", response);
-
-                    auto _ = client.write(response);
-                },
-                [](const std::string& error)
-                {
-                    // spdlog::error("Client error: ", error);
-                },
-            },
-            client);
-    }
-}
+auto serve(TcpListener& listener, Router& router) -> void;
 }
 
 template <>

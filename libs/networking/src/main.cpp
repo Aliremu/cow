@@ -31,37 +31,40 @@ struct AppState
     std::vector<Message> Messages;
 };
 
-namespace index_controller
+struct index_controller
 {
-    [[= wow::Mapping{""}]] auto index() -> wow::Response
+    [[= wow::Mapping{}]] auto index() -> wow::Response
     {
-        return wow::ok(10);
+        return wow::view<"index.html">();
     }
-}
+};
 
-// struct message_controller
-// {
-//     auto get_name() -> std::string
-//     {
-//         return "Hello World!";
-//     }
-//
-//     [[= wow::Mapping{""}]] auto list_messages() -> wow::Response
-//     {
-//         auto name = get_name();
-//         return {200};
-//     }
-//
-//     [[= wow::Mapping{""}]] auto create_message() -> wow::Response
-//     {
-//         return {200};
-//     }
-//
-//     [[= wow::Mapping{"/{id}"}]] auto get_message([[= wow::Mapping{"id"}]] int id) -> wow::Response
-//     {
-//         return wow::ok(5);
-//     }
-// };
+struct message_controller
+{
+    int count{};
+
+    auto get_name() -> std::string
+    {
+        return "Hello World!";
+    }
+
+    [[= wow::Mapping{""}]] auto list_messages() -> wow::Response
+    {
+        count += 1;
+        auto name = get_name();
+        return wow::ok(name + std::to_string(count));
+    }
+
+    [[= wow::Mapping{""}]] auto create_message() -> wow::Response
+    {
+        return wow::ok("Create");
+    }
+
+    [[= wow::Mapping{"/{id}"}]] auto get_message() -> wow::Response
+    {
+        return wow::ok("Get");
+    }
+};
 
 template <typename T>
 struct AtomicMirror
@@ -82,11 +85,12 @@ struct AtomicMirror
             // std::atomic<T> requires T to be trivially copyable. Preserve
             // fields such as std::string instead of forming an invalid type.
             if (is_trivially_copyable_type(original_type))
-                mirrored_type = substitute(^^std::atomic, std::array{original_type});
+                mirrored_type = substitute(
+                    ^^std::atomic,
+                    std::array{
+                        original_type});
 
-            atomic_members.push_back(data_member_spec(
-                mirrored_type,
-                {.name = identifier_of(member)}));
+            atomic_members.push_back(data_member_spec(mirrored_type, {.name = identifier_of(member)}));
         }
 
         define_aggregate(^^type, atomic_members);
@@ -104,13 +108,10 @@ auto main() -> int
 
     spdlog::info("Listening on 0.0.0.0:8080");
     auto app = wow::Router{};
-    spdlog::info("{}", wow::to_json(Message{.Id = 1723, .Text = "Hello, World!"}));
-    app.route<^^index_controller>("/"); //.route<message_controller>("/messages");
-
-    using ConcurrentConfig = AtomicMirror<Message>::type;
-    auto c = ConcurrentConfig{};
-    c.Id.store(10);
-    spdlog::info("Id: {}", c.Id.load());
+    app
+      .register_service<AppState>()
+      .route<index_controller>("/")
+      .route<message_controller>("/messages");
 
     wow::serve(*server, app);
 }

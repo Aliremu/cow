@@ -1,6 +1,6 @@
 .PHONY: image build run test shell clean-cache async-example
 
-IMAGE ?= chuds-dev
+IMAGE ?= dev
 TTY   := $(shell [ -t 0 ] && echo -t)
 CABIN_CACHE_DIR ?= $(PWD)/.cabin-cache
 HOST_PORT ?= 8080
