@@ -1,4 +1,6 @@
 #include <iostream>
+#include <mutex>
+#include <print>
 #include <shared_mutex>
 #include <string>
 #include <thread>
@@ -16,7 +18,24 @@ auto main() -> int
 
     // Goal: allow readers to share the lock, while a writer has exclusive access.
     // TODO: Read Ada's score in a jthread under std::shared_lock.
+    auto read = std::jthread{[&]
+                             {
+                                 auto _ = std::shared_lock{scores_mutex};
+                                 auto score = scores.at("Ada");
+                                 std::println("Ada's score: {}", score);
+                             }};
     // TODO: Join the reader before changing the map.
+    read.join();
+
+    {
+        auto _ = std::unique_lock{scores_mutex};
+        scores.at("Ada") += 5;
+    }
+
+    {
+        auto _ = std::shared_lock{scores_mutex};
+        std::println("Update Ada score: {}", scores.at("Ada"));
+    }
     // TODO: Update Ada's score under std::unique_lock.
     // TODO: Read and print the updated score under std::shared_lock.
 }

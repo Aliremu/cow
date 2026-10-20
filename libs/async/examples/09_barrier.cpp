@@ -1,6 +1,8 @@
+#include <algorithm>
 #include <atomic>
 #include <barrier>
-#include <iostream>
+#include <print>
+#include <ranges>
 #include <thread>
 #include <vector>
 
@@ -19,9 +21,21 @@ auto main() -> int
 
     // Goal: synchronize the same workers at two phase boundaries.
     // TODO: Start participant_count jthreads.
+    for (auto i : std::views::iota(0, participant_count))
+    {
+        participants.emplace_back(
+            [&]
+            {
+                phase.arrive_and_wait();
+                second_phase_completed.fetch_add(1);
+                phase.arrive_and_wait();
+            });
+    }
     // TODO: In every thread, call phase.arrive_and_wait().
     // TODO: Increment second_phase_completed, then arrive_and_wait() again.
     // TODO: Print the count after the jthreads have joined.
-    //
+    std::ranges::for_each(participants, [](std::jthread& j) { j.join(); });
+    std::println("Second Phase: {}", second_phase_completed.load());
+
     // Question: how does this differ from std::latch?
 }

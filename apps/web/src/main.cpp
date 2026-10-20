@@ -31,7 +31,7 @@ struct AppState
     std::vector<Message> Messages;
 };
 
-struct index_controller
+struct IndexController
 {
     [[= wow::Mapping{}]] auto index() -> wow::Response
     {
@@ -39,7 +39,7 @@ struct index_controller
     }
 };
 
-struct message_controller
+struct MessageController
 {
     int count{};
 
@@ -108,10 +108,7 @@ auto main() -> int
 
     spdlog::info("Listening on 0.0.0.0:8080");
     auto app = wow::Router{};
-    app
-      .register_service<AppState>()
-      .route<index_controller>("/")
-      .route<message_controller>("/messages");
+    app.register_service<AppState>().route<IndexController>("/").route<MessageController>("/messages");
 
     wow::serve(*server, app);
 }

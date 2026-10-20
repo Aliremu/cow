@@ -1,0 +1,18 @@
+[package]
+name = "web"
+version = "0.1.0"
+cxx-standard.workspace = true
+
+[profile]
+cxxflags = ["-freflection"]
+
+[target.main]
+type = "executable"
+sources = ["src/main.cpp"]
+defines = ["SPDLOG_USE_STD_FORMAT"]
+deps = ["networking:tcp", "cabin-ports/spdlog"]
+
+[dependencies]
+networking.workspace = true
+std.workspace = true
+"cabin-ports/spdlog".workspace = true

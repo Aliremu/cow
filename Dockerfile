@@ -3,7 +3,8 @@
 ARG REGISTRY=docker.xirei.moe
 ARG REPOSITORY=toolchains/gcc
 ARG GCC_TAG=linux-${BUILDARCH}-native-nightly   # better: pin a commit tag
-ARG CABIN_VERSION=0.17.0
+ARG CABIN_VERSION=c759df300c9bf8a071630a2672993d5c5582c7cc
+ARG CABIN_REPO=https://github.com/Aliremu/cabin
 
 # Stage 1: prebuilt native GCC trunk from the local registry
 FROM ${REGISTRY}/${REPOSITORY}:${GCC_TAG} AS gcc
@@ -11,7 +12,9 @@ FROM ${REGISTRY}/${REPOSITORY}:${GCC_TAG} AS gcc
 # Stage 2: Cabin
 FROM rust:slim AS cabin
 ARG CABIN_VERSION
-RUN cargo install cabinpkg --version ${CABIN_VERSION} --locked --root /out
+ARG CABIN_REPO
+# RUN cargo install cabinpkg --version ${CABIN_VERSION} --locked --root /out
+RUN cargo install --git ${CABIN_REPO} cabinpkg --rev ${CABIN_VERSION} --locked --root /out
 
 # Stage 3: dev image
 FROM ubuntu:24.04 AS dev

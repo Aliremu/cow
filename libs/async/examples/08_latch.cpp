@@ -1,6 +1,7 @@
 #include <atomic>
-#include <iostream>
 #include <latch>
+#include <print>
+#include <ranges>
 #include <thread>
 #include <vector>
 
@@ -17,8 +18,20 @@ auto main() -> int
 
     // Goal: wait until every worker reaches the same one-time checkpoint.
     // TODO: Start worker_count jthreads.
+    for (auto i : std::views::iota(0, worker_count))
+    {
+        workers.emplace_back(
+            [&]
+            {
+                completed.fetch_add(1);
+                all_finished.count_down();
+            });
+    }
     // TODO: In each worker, increment completed and call all_finished.count_down().
     // TODO: In main, call all_finished.wait() before printing completed.
-    //
+
+    all_finished.wait();
+    std::println("Completed: {}", completed.load());
+
     // Question: why is std::latch unsuitable for a second round?
 }

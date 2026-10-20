@@ -3,7 +3,15 @@ name = "std"
 version = "0.1.0"
 cxx-standard.workspace = true
 
+[dev-dependencies]
+"cabin-ports/googletest".workspace = true
+
 [target.std]
 type = "library"
 sources = ["src/cow.cpp"]
 include-dirs = ["src"]
+
+[target.std_test]
+type = "test"
+sources = ["tests/cow.cpp"]
+deps = ["std", "cabin-ports/googletest"]

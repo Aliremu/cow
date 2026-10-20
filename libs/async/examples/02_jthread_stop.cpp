@@ -28,7 +28,7 @@ auto main() -> int
         // TODO: Increment ticks until stop.stop_requested() is true.
 
         // TODO: Sleep briefly, request_stop(), and leave the scope to join.
-        std::this_thread::sleep_for(500ms);
+        std::this_thread::sleep_for(200ms);
         thread.request_stop();
     }
     // TODO: Print ticks after the jthread is destroyed.

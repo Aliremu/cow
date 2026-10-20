@@ -1,9 +1,12 @@
 [workspace]
 members = [
-  "libs/*"
+  "libs/*",
+  "apps/*",
 ]
 default-members = [
-  "libs/core"
+  "libs/core",
+  "libs/std",
+  "apps/web",
 ]
 cxx-standard = "c++26"
 
@@ -13,3 +16,9 @@ cxx = "g++"
 ar = "ar"
 
 [workspace.dependencies]
+networking = { path = "libs/networking"}
+std = { path = "libs/std" }
+"cabin-ports/spdlog" = "=1.17.0"
+
+[workspace.dev-dependencies]
+"cabin-ports/googletest" = "=1.17.0"

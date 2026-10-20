@@ -9,8 +9,8 @@
 #include <utility>
 #include <vector>
 
-#include "http.h"
 #include "common.h"
+#include "http.h"
 
 namespace wow
 {
@@ -54,7 +54,8 @@ namespace
 // consteval auto is_post_mapping() -> bool
 // {
 //     constexpr auto normalized = std::meta::remove_cvref(Type);
-//     return std::meta::has_template_arguments(normalized) && std::meta::template_of(normalized) == ^^wow::post_mapping;
+//     return std::meta::has_template_arguments(normalized) && std::meta::template_of(normalized) ==
+//     ^^wow::post_mapping;
 // }
 
 template <auto Member>

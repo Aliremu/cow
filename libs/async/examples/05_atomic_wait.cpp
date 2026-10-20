@@ -29,5 +29,5 @@ auto main() -> int
     thread.join();
     //
     // Stretch: add explicit acquire/release memory orders and explain why.
-    std::println("Reary: {}", result.load());
+    std::println("Result: {}", result.load());
 }

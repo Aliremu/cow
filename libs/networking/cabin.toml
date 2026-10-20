@@ -14,13 +14,3 @@ sources = [
   "src/router.cpp"
 ]
 include-dirs = ["src"]
-
-[target.main]
-type = "executable"
-sources = ["src/main.cpp"]
-include-dirs = ["src"]
-defines = ["SPDLOG_USE_STD_FORMAT"]
-deps = ["tcp", "spdlog"]
-
-[dependencies]
-spdlog = { version = "=1.17.0", port = true }

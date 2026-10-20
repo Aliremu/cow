@@ -2,6 +2,7 @@
 
 #include <concepts>
 #include <format>
+#include <fstream>
 #include <meta>
 #include <optional>
 #include <print>
@@ -9,7 +10,6 @@
 #include <string_view>
 #include <tuple>
 #include <vector>
-#include <fstream>
 
 #include "common.h"
 
@@ -100,8 +100,8 @@ struct Response
 };
 
 template <typename T>
-inline constexpr bool is_string_like =
-    std::constructible_from<std::string, std::remove_cvref_t<T>> || std::constructible_from<std::string_view, std::remove_cvref_t<T>>;
+inline constexpr bool is_string_like = std::constructible_from<std::string, std::remove_cvref_t<T>> ||
+                                       std::constructible_from<std::string_view, std::remove_cvref_t<T>>;
 
 template <typename T>
     requires(!is_string_like<T>)
@@ -159,21 +159,14 @@ inline auto error(int code, const T& resp) -> Response
 template <FixedString Path>
 auto view() -> Response
 {
-    static const auto body = [] {
-        auto file = std::ifstream{
-            std::string{std::string_view{Path}},
-            std::ios::binary
-        };
+    static const auto body = []
+    {
+        auto file = std::ifstream{std::string{std::string_view{Path}}, std::ios::binary};
 
         if (!file)
-            throw std::runtime_error{
-                "Failed to open file: " + std::string{std::string_view{Path}}
-            };
+            throw std::runtime_error{"Failed to open file: " + std::string{std::string_view{Path}}};
 
-        return std::string{
-            std::istreambuf_iterator<char>{file},
-            std::istreambuf_iterator<char>{}
-        };
+        return std::string{std::istreambuf_iterator<char>{file}, std::istreambuf_iterator<char>{}};
     }();
 
     return ok(body);
@@ -187,5 +180,4 @@ struct std::formatter<wow::Header> : std::formatter<std::string_view>
     {
         return std::formatter<std::string_view>::format(std::format("{}: {}", h.Key, h.Value), ctx);
     }
-
 };

@@ -25,7 +25,7 @@ auto main() -> int
         for (auto i : std::views::iota(0, worker_count))
         {
             workers.emplace_back(
-                [&](std::stop_token token)
+                [&]()
                 {
                     for (auto i : std::views::iota(0, increments_per_worker))
                     {

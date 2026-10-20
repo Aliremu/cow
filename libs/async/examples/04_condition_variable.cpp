@@ -42,17 +42,21 @@ auto main() -> int
     // TODO: Pop a job while holding the lock, then unlock before adding to total.
     // TODO: Exit only when the queue is empty and producer_finished is true.
     // TODO: Create a producer that pushes jobs under the mutex and notify_one()s.
-    auto producer = std::jthread{[&](std::stop_token token)
+    auto producer = std::jthread{[&]
                                  {
-                                     auto lock = std::lock_guard{mutex};
-                                     jobs.push(1);
-                                     ready.notify_one();
-                                     jobs.push(2);
-                                     ready.notify_one();
-                                     jobs.push(3);
-                                     ready.notify_one();
+                                     for (const auto job : {1, 2, 3})
+                                     {
+                                         {
+                                             auto _ = std::lock_guard{mutex};
+                                             jobs.push(job);
+                                         }
+                                         ready.notify_one();
+                                     }
 
-                                     producer_finished = true;
+                                     {
+                                         auto _ = std::lock_guard{mutex};
+                                         producer_finished = true;
+                                     }
                                      ready.notify_one();
                                  }};
     // TODO: Set producer_finished under the mutex and notify the consumer.
