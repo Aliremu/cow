@@ -43,12 +43,14 @@ struct cow
 
     auto operator*(this auto&& self) -> T&
     {
-        self._data = std::move(self.clone()._data);
+        if (!self._data.unique())
+            self._data = std::move(self.clone()._data);
         return *self._data;
     }
     auto operator->(this auto&& self) -> T*
     {
-        self._data = std::move(self.clone()._data);
+        if (!self._data.unique())
+            self._data = std::move(self.clone()._data);
         return self._data.get();
     }
 };

@@ -10,8 +10,7 @@ struct MockStruct
 
 TEST(Cow, Construct)
 {
-
-    auto a = cow<MockStruct>(1);
+    auto a = cow<MockStruct>{1};
     auto b = a;
 
     EXPECT_EQ(a._data.get(), b._data.get());
@@ -25,12 +24,24 @@ TEST(Cow, ConstructFromSharedPtr)
     auto a = std::make_shared<MockStruct>(1);
     {
         auto b = cow{std::move(a)};
-        EXPECT_EQ(a.use_count(), 1);
+        EXPECT_EQ(b._data.use_count(), 1);
         EXPECT_EQ(b->value, 1);
         b->value = 10;
-        EXPECT_EQ(b->value, 1);
+        EXPECT_EQ(b->value, 10);
     }
     EXPECT_EQ(a.use_count(), 0);
+}
+
+TEST(Cow, Clone)
+{
+    auto a = cow<MockStruct>{1};
+    auto b = a.clone();
+    b->value = 10;
+    EXPECT_EQ(a->value, 1);
+    EXPECT_EQ(b->value, 10);
+    EXPECT_NE(a._data.get(), b._data.get());
+    EXPECT_EQ(a._data.use_count(), 1);
+    EXPECT_EQ(b._data.use_count(), 1);
 }
 
 auto main(int argc, char** argv) -> int

@@ -4,12 +4,6 @@
 version = 1
 
 [[package]]
-name = "cabin-ports/googletest"
-version = "1.17.0"
-source = "index"
-checksum = "sha256:c26f6945731a3e81e7d25b2b35ed145768f9e7ac8fc377da885af64b45fc4d2a"
-
-[[package]]
 name = "cabin-ports/spdlog"
 version = "1.17.0"
 source = "index"
