@@ -8,8 +8,8 @@ PACKAGE ?=
 BIN ?=
 RUN_TARGET = $(if $(PACKAGE),--package "$(PACKAGE)") $(if $(BIN),--bin "$(BIN)")
 DOCKER_RUN = docker run --rm -i $(TTY) \
+		--network host\
     -v "$(PWD)":"$(PWD)" -w "$(PWD)" \
-    -p $(HOST_PORT):8080 \
     -e CCACHE_DIR=/ccache -e CCACHE_MAXSIZE=50G -v dev-ccache:/ccache \
     $(IMAGE)
 

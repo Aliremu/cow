@@ -11,6 +11,7 @@
 
 #include "common.h"
 #include "http.h"
+#include "tcp.h"
 
 namespace wow
 {
@@ -131,6 +132,8 @@ class Router
     Routers m_Routes;
     static const Response RESPONSE_404;
 };
+
+auto serve(TcpListener& listener, Router& router) -> void;
 }
 
 template <std::size_t N>

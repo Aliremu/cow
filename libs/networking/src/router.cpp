@@ -33,4 +33,32 @@ auto Router::dispatch(const Request& request) -> Response
 
     return RESPONSE_404;
 }
+
+auto serve(TcpListener& listener, Router& router) -> void
+{
+    for (const auto& client : listener.incoming())
+    {
+        wow::visit(
+            overload{
+                [&router](const TcpStream& client)
+                {
+                    std::array<char, 1024> buffer{};
+                    const auto read = client.read(buffer);
+
+                    const auto request = Request::from_raw(std::string_view{buffer});
+                    if (!request)
+                    {
+                        return;
+                    }
+
+                    const auto response = router.dispatch(*request);
+                    const auto written = client.write(response.build_response());
+                    static_cast<void>(read);
+                    static_cast<void>(written);
+                },
+                [](const std::string&) {},
+            },
+            client);
+    }
+}
 }

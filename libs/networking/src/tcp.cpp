@@ -3,6 +3,7 @@
 #include <array>
 #include <charconv>
 #include <ranges>
+#include <sys/socket.h>
 #include <unistd.h>
 
 namespace wow
@@ -77,6 +78,38 @@ auto TcpStream::from_listener(int socket, SocketAddr addr) -> TcpStream
         addr,
         new std::atomic<std::size_t>(1),
     };
+}
+
+auto TcpStream::connect(std::string_view addr) -> std::expected<TcpStream, std::string>
+{
+    const auto hostPort = SocketAddr::from_address(addr);
+    if (!hostPort)
+        return std::unexpected{"Failed to parse address!"};
+
+    const auto client = ::socket(AF_INET, SOCK_STREAM, 0);
+    if (client == -1)
+        return std::unexpected{"Failed to create socket!"};
+
+    const auto reuse_address = 1;
+    if (::setsockopt(client, SOL_SOCKET, SO_REUSEADDR, &reuse_address, sizeof(reuse_address)) == -1)
+    {
+        ::close(client);
+        return std::unexpected{"Failed to setsockopt!"};
+    }
+
+    const auto address = sockaddr_in{
+        .sin_family = AF_INET,
+        .sin_port = ::htons(hostPort->Port),
+        .sin_addr = {.s_addr = ::htonl(hostPort->Host)},
+    };
+
+    if (::connect(client, reinterpret_cast<const sockaddr*>(&address), sizeof(address)) == -1)
+    {
+        close(client);
+        return std::unexpected{"Failed to connect to address!"};
+    }
+
+    return std::expected<TcpStream, std::string>{std::in_place, TcpStream::from_listener(client, *hostPort)};
 }
 
 TcpStream::TcpStream(const TcpStream& other)
@@ -248,33 +281,5 @@ TcpListener::TcpListener(in_addr_t host, uint16_t port, int socket)
 TcpListener::~TcpListener()
 {
     ::close(m_Socket);
-}
-
-auto serve(TcpListener& listener, Router& router) -> void
-{
-    for (const auto& client : listener.incoming())
-    {
-        wow::visit(
-            overload{
-                [&router](const TcpStream& client)
-                {
-                    std::array<char, 1024> buffer{};
-                    const auto read = client.read(buffer);
-
-                    const auto request = Request::from_raw(std::string_view{buffer});
-                    if (!request)
-                    {
-                        return;
-                    }
-
-                    const auto response = router.dispatch(*request);
-                    const auto written = client.write(response.build_response());
-                    static_cast<void>(read);
-                    static_cast<void>(written);
-                },
-                [](const std::string&) {},
-            },
-            client);
-    }
 }
 }

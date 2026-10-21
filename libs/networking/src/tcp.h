@@ -1,7 +1,5 @@
 #pragma once
 
-#include "http.h"
-#include "router.h"
 #include <arpa/inet.h>
 #include <atomic>
 #include <concepts>
@@ -14,7 +12,6 @@
 #include <functional>
 #include <netinet/in.h>
 #include <optional>
-#include <print>
 #include <string_view>
 #include <sys/socket.h>
 #include <type_traits>
@@ -37,6 +34,7 @@ class TcpStream
 {
   public:
     [[nodiscard]] static auto from_listener(int socket, SocketAddr addr) -> TcpStream;
+    [[nodiscard]] static auto connect(std::string_view addr) -> std::expected<TcpStream, std::string>;
 
     TcpStream(const TcpStream& other);
     TcpStream& operator=(const TcpStream& other);
@@ -169,8 +167,6 @@ inline auto visit(Fn&& fn, const std::expected<Result, Err>& value) -> void
         std::forward<Fn>(fn)(value.error());
     }
 }
-
-auto serve(TcpListener& listener, Router& router) -> void;
 }
 
 template <>
